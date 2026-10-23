@@ -1,0 +1,661 @@
+:root {
+  /* Chinasoft International × WorkBuddy — enterprise orbital palette */
+  --csi-navy-950: #080d2f;
+  --csi-navy-900: #10164b;
+  --csi-navy-800: #1a237e;
+  --csi-blue-600: #3367d6;
+  --csi-blue-500: #4285f4;
+  --csi-cyan-400: #42ddeb;
+  --csi-cyan-100: #d9f8fb;
+  --csi-cloud-50: #f7f9fc;
+  --csi-cloud-100: #eef3f8;
+  --csi-slate-200: #d8e1eb;
+  --csi-slate-500: #627185;
+  --csi-ink-900: #172236;
+  --csi-amber-400: #f4ad62;
+  --csi-focus: rgba(66, 221, 235, 0.34);
+  --csi-hairline: rgba(45, 70, 104, 0.15);
+  --csi-selected-surface: linear-gradient(135deg, rgba(66, 221, 235, 0.14), rgba(66, 133, 244, 0.16));
+  --csi-selected-shadow:
+    inset 0 0 0 1px rgba(66, 221, 235, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 6px 16px rgba(2, 7, 27, 0.14);
+  --buddyhue-accent: var(--csi-blue-600);
+  --buddyhue-accent-soft: rgba(66, 133, 244, 0.12);
+  color-scheme: light;
+  accent-color: var(--csi-blue-600);
+}
+
+html,
+body,
+#root {
+  background: var(--csi-cloud-100) !important;
+  color: var(--csi-ink-900);
+}
+
+::selection {
+  background: rgba(66, 221, 235, 0.28);
+  color: var(--csi-navy-950);
+}
+
+/* The generated cabin is atmosphere, not content: the center stays quiet. */
+.teams-container {
+  isolation: isolate;
+  background: var(--csi-cloud-100) !important;
+}
+
+.teams-container::before {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(90deg, rgba(8, 13, 47, 0.08), rgba(247, 249, 252, 0.83) 28%, rgba(247, 249, 252, 0.93) 50%, rgba(247, 249, 252, 0.83) 72%, rgba(8, 13, 47, 0.08)),
+    linear-gradient(180deg, rgba(247, 249, 252, 0.22), rgba(247, 249, 252, 0.88)),
+    var(--codedrobe-image-cabin);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0.27;
+}
+
+.teams-container::after {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  right: clamp(12px, 2vw, 30px);
+  bottom: 6px;
+  width: clamp(150px, 18vw, 280px);
+  aspect-ratio: 1;
+  pointer-events: none;
+  background: var(--codedrobe-image-mascots) center / contain no-repeat;
+  opacity: 0.095;
+  filter: saturate(0.78) drop-shadow(0 16px 36px rgba(8, 13, 47, 0.16));
+}
+
+.teams-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Sidebar: trustworthy navy, with the client mark kept as a quiet signature. */
+:is(
+  .conversation-sidebar,
+  .conversation-list,
+  [data-testid*="sidebar"],
+  .teams-container > [class*="sidebar"]
+) {
+  position: relative;
+  color: rgba(255, 255, 255, 0.91) !important;
+  background-color: var(--csi-navy-950) !important;
+  background-image:
+    radial-gradient(circle at 18% 4%, rgba(66, 221, 235, 0.17), transparent 31%),
+    linear-gradient(145deg, rgba(66, 133, 244, 0.14), transparent 42%) !important;
+  background-position: center !important;
+  background-size: auto !important;
+  background-repeat: no-repeat !important;
+  border-right: 1px solid rgba(66, 221, 235, 0.2) !important;
+  box-shadow: 12px 0 34px rgba(8, 13, 47, 0.11);
+}
+
+/* WorkBuddy 5.9.1 uses opaque inner sidebar surfaces; make the shell continuous. */
+html.codedrobe-theme body.cb-light .conversation-list-header,
+html.codedrobe-theme body.cb-light .conversation-list-topbar {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list-tabs {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list-content {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list-footer {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-section,
+html.codedrobe-theme body.cb-light .conversation-section-content {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-section-motion {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-section-groups,
+html.codedrobe-theme body.cb-light .conversation-section-tasks {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list * {
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+/* 5.9.1 gives card titles and timestamps their own text-fill values. */
+html.codedrobe-theme body.cb-light .conversation-list .conversation-agent-card [class*="_title_"] {
+  color: rgba(255, 255, 255, 0.82) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.82) !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-agent-card [class*="_titleStatic_"] {
+  color: rgba(255, 255, 255, 0.82) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.82) !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-agent-card [class*="_time_"] {
+  color: rgba(255, 255, 255, 0.48) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.48) !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list :is(.conversation-section-label, .conversation-list-version-badge) {
+  color: rgba(255, 255, 255, 0.54) !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-section-label {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-agent-card {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .collapsible-section-header {
+  color: rgba(255, 255, 255, 0.78) !important;
+  background: rgba(255, 255, 255, 0.055) !important;
+  border-color: rgba(66, 221, 235, 0.12) !important;
+  box-shadow: none !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .industry-template-switcher__trigger {
+  color: rgba(255, 255, 255, 0.86) !important;
+  background: rgba(255, 255, 255, 0.075) !important;
+  border-color: rgba(66, 221, 235, 0.22) !important;
+}
+
+.conversation-list .conversation-item,
+.conversation-list .conversation-item:hover {
+  background: transparent !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-agent-card:hover {
+  background: rgba(255, 255, 255, 0.075) !important;
+  border-radius: 10px !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-item:hover .conversation-agent-card {
+  background: rgba(255, 255, 255, 0.075) !important;
+  border-radius: 10px !important;
+}
+
+.conversation-list .conversation-show-more-button:hover {
+  background: rgba(255, 255, 255, 0.075) !important;
+  border-radius: 10px !important;
+}
+
+.conversation-list .conversation-list-tab-beta {
+  border-color: rgba(66, 221, 235, 0.28) !important;
+  background: rgba(66, 221, 235, 0.08) !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-version-badge {
+  color: rgba(255, 255, 255, 0.46) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.46) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+:is(
+  .conversation-sidebar,
+  .conversation-list,
+  [data-testid*="sidebar"],
+  .teams-container > [class*="sidebar"]
+) :is(button, a, [role="button"]) {
+  color: inherit;
+  border-radius: 10px;
+}
+
+:is(.conversation-sidebar, .conversation-list) [aria-current="page"] {
+  color: #ffffff !important;
+  background: var(--csi-selected-surface) !important;
+  box-shadow: var(--csi-selected-shadow) !important;
+}
+
+:is(.conversation-sidebar, .conversation-list) [aria-selected="true"] {
+  color: #ffffff !important;
+  background: var(--csi-selected-surface) !important;
+  box-shadow: var(--csi-selected-shadow) !important;
+}
+
+:is(.conversation-sidebar, .conversation-list) [data-state="active"] {
+  color: #ffffff !important;
+  background: var(--csi-selected-surface) !important;
+  box-shadow: var(--csi-selected-shadow) !important;
+}
+
+[data-testid*="sidebar"] :is([aria-current="page"], [aria-selected="true"], [data-state="active"]) {
+  color: #ffffff !important;
+  background: var(--csi-selected-surface) !important;
+  box-shadow: var(--csi-selected-shadow) !important;
+}
+
+.teams-container > [class*="sidebar"] :is([aria-current="page"], [aria-selected="true"], [data-state="active"]) {
+  color: #ffffff !important;
+  background: var(--csi-selected-surface) !important;
+  box-shadow: var(--csi-selected-shadow) !important;
+}
+
+:is(
+  .conversation-sidebar,
+  .conversation-list,
+  [data-testid*="sidebar"],
+  .teams-container > [class*="sidebar"]
+) :is(button, a, [role="button"]):hover {
+  background-color: rgba(255, 255, 255, 0.075) !important;
+}
+
+/* 5.9.1 paints tab selection on a pale outer row and hover on the inner button.
+   Keep the row transparent so every non-primary state resolves to one navy surface. */
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-tab-row {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-tab-row:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-tab-row.active {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-tab-button {
+  border-radius: 10px !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-tab-button:not([aria-selected="true"]):hover {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.075) !important;
+  background-image: none !important;
+  border-color: rgba(66, 221, 235, 0.14) !important;
+  border-radius: 10px !important;
+  box-shadow: inset 0 0 0 1px rgba(66, 221, 235, 0.12) !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-tab-button:not([aria-selected="true"]):focus-visible {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.075) !important;
+  background-image: none !important;
+  border-color: rgba(66, 221, 235, 0.14) !important;
+  border-radius: 10px !important;
+  box-shadow: inset 0 0 0 1px rgba(66, 221, 235, 0.12) !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-tab-button.active:not([aria-selected="true"]) {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.075) !important;
+  background-image: none !important;
+  border-color: rgba(66, 221, 235, 0.14) !important;
+  border-radius: 10px !important;
+  box-shadow: inset 0 0 0 1px rgba(66, 221, 235, 0.12) !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-tab-button[aria-expanded="true"]:not([aria-selected="true"]) {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.075) !important;
+  background-image: none !important;
+  border-color: rgba(66, 221, 235, 0.14) !important;
+  border-radius: 10px !important;
+  box-shadow: inset 0 0 0 1px rgba(66, 221, 235, 0.12) !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-tab-button[aria-selected="true"] {
+  color: #ffffff !important;
+  background-color: rgba(66, 133, 244, 0.14) !important;
+  background-image: var(--csi-selected-surface) !important;
+  border-radius: 10px !important;
+  box-shadow: var(--csi-selected-shadow) !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-tab-button:hover * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-tab-button:focus-visible * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html.codedrobe-theme body.cb-light .conversation-list .conversation-list-tab-button[aria-selected="true"] * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Main work surface: dense enough for B2B work, translucent enough to feel alive. */
+html.codedrobe-theme body .teams-main-content,
+html.codedrobe-theme body .main-content,
+html.codedrobe-theme body .chat-container {
+  position: relative;
+  isolation: isolate;
+  color: var(--csi-ink-900) !important;
+  background-color: var(--csi-navy-950) !important;
+  background-image:
+    linear-gradient(90deg, rgba(4, 9, 34, 0.58), rgba(7, 18, 55, 0.26) 32%, rgba(7, 18, 55, 0.22) 68%, rgba(4, 9, 34, 0.58)),
+    linear-gradient(180deg, rgba(3, 8, 29, 0.15), rgba(3, 8, 29, 0.44)),
+    var(--codedrobe-image-cabin) !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  backdrop-filter: blur(17px) saturate(108%);
+  -webkit-backdrop-filter: blur(17px) saturate(108%);
+}
+
+html.codedrobe-theme body .teams-main-content::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  right: clamp(22px, 2.2vw, 42px);
+  bottom: clamp(18px, 2.2vh, 34px);
+  width: clamp(168px, 15vw, 246px);
+  aspect-ratio: 1;
+  pointer-events: none;
+  background: var(--codedrobe-image-mascots) center / contain no-repeat;
+  opacity: 0;
+  filter: drop-shadow(0 18px 40px rgba(2, 7, 27, 0.38));
+}
+
+/* Home is the brand stage: keep the mascot duo crisp and fully opaque. */
+html.codedrobe-theme body .teams-main-content:has(.wb-home-route)::after {
+  opacity: 1;
+}
+
+/* In task conversations the duo becomes a quiet background signature.
+   The input and content layers remain above it, so controls are never covered. */
+html.codedrobe-theme body .project-detail-view__main,
+html.codedrobe-theme body .chat-container {
+  position: relative;
+  isolation: isolate;
+}
+
+html.codedrobe-theme body .project-detail-view__main::after,
+html.codedrobe-theme body .chat-container::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  right: clamp(22px, 2.2vw, 42px);
+  bottom: clamp(18px, 2.2vh, 34px);
+  width: clamp(168px, 15vw, 246px);
+  aspect-ratio: 1;
+  pointer-events: none;
+  background: var(--codedrobe-image-mascots) center / contain no-repeat;
+  opacity: 0.24;
+  filter: saturate(0.92) drop-shadow(0 18px 40px rgba(2, 7, 27, 0.22));
+}
+
+html.codedrobe-theme body .project-detail-view__main > *,
+html.codedrobe-theme body .chat-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+html.codedrobe-theme body .project-detail-view__input-area {
+  position: relative;
+  z-index: 3;
+}
+
+/* Exact 5.9.1 home shells are opaque by default and otherwise hide the theme. */
+html.codedrobe-theme body .wb-home-route,
+html.codedrobe-theme body .wb-home-page {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+.wb-home-route {
+  isolation: isolate;
+}
+
+.wb-home-route::after {
+  content: none;
+}
+
+.wb-home-route > * {
+  position: relative;
+  z-index: 1;
+}
+
+html.codedrobe-theme body .wb-home-header__title {
+  color: #ffffff !important;
+  text-shadow: 0 3px 18px rgba(3, 8, 29, 0.48);
+}
+
+html.codedrobe-theme body .wb-scene-tabs {
+  color: rgba(255, 255, 255, 0.9) !important;
+  background: rgba(8, 19, 55, 0.5) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(66, 221, 235, 0.34),
+    0 8px 24px rgba(3, 8, 29, 0.2) !important;
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+}
+
+html.codedrobe-theme body .wb-scene-tabs .wb-segmented__item:not(.wb-segmented__item--active) {
+  color: rgba(255, 255, 255, 0.76) !important;
+}
+
+:is(.teams-main-content, .main-content, .chat-container) > :is([class*="header"], [class*="toolbar"]) {
+  background: rgba(255, 255, 255, 0.84) !important;
+  border-bottom: 1px solid var(--csi-hairline) !important;
+  box-shadow: 0 10px 28px rgba(20, 38, 70, 0.045);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* Task conversations use a nested topbar; match the calm space/project header. */
+html.codedrobe-theme body .workbuddy-topbar {
+  color: var(--csi-ink-900) !important;
+  background-color: rgba(247, 252, 255, 0.94) !important;
+  background-image: none !important;
+  border-bottom: 1px solid var(--csi-hairline) !important;
+  box-shadow: 0 8px 24px rgba(20, 38, 70, 0.055) !important;
+  backdrop-filter: blur(18px) saturate(108%);
+  -webkit-backdrop-filter: blur(18px) saturate(108%);
+}
+
+html.codedrobe-theme body .workbuddy-topbar-title {
+  color: var(--csi-ink-900) !important;
+  -webkit-text-fill-color: var(--csi-ink-900) !important;
+}
+
+html.codedrobe-theme body .workbuddy-topbar-actions :is(button, [role="button"]) {
+  color: var(--csi-slate-500) !important;
+  border-radius: 8px !important;
+}
+
+html.codedrobe-theme body .workbuddy-topbar-actions :is(button, [role="button"]):hover {
+  color: var(--csi-ink-900) !important;
+  background: rgba(51, 103, 214, 0.08) !important;
+}
+
+/* The composer borrows the helmet rim: one precise cyan edge, not neon everywhere. */
+:is(.wb-home-composer, [data-testid*="composer"], .teams-main-content > [class*="composer"]) {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html.codedrobe-theme body .wb-home-prompt-list__row {
+  background: rgba(250, 253, 255, 0.86) !important;
+  border-color: rgba(139, 216, 255, 0.58) !important;
+  box-shadow: 0 6px 18px rgba(2, 7, 27, 0.16) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+html.codedrobe-theme body .wb-home-composer .cr-input-container {
+  background:
+    linear-gradient(145deg, rgba(248, 252, 255, 0.86), rgba(224, 241, 252, 0.76)) !important;
+  border-color: rgba(118, 211, 240, 0.58) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.62),
+    0 10px 28px rgba(2, 7, 27, 0.16) !important;
+  backdrop-filter: blur(22px) saturate(115%);
+  -webkit-backdrop-filter: blur(22px) saturate(115%);
+}
+
+html.codedrobe-theme body .wb-home-composer .cr-input-toolbar__right {
+  background: transparent !important;
+}
+
+textarea,
+input,
+[role="textbox"][contenteditable="true"],
+.wb-home-composer [contenteditable="true"] {
+  color: var(--csi-ink-900) !important;
+  caret-color: var(--csi-blue-600) !important;
+}
+
+textarea::placeholder,
+input::placeholder,
+[contenteditable="true"][data-placeholder]::before {
+  color: #7a8798 !important;
+}
+
+textarea:focus,
+input:focus,
+[contenteditable="true"]:focus,
+textarea:focus-visible,
+input:focus-visible,
+[contenteditable="true"]:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+}
+
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--csi-cyan-400) !important;
+  outline-offset: 2px;
+}
+
+html.codedrobe-theme body .cr-send-button:not(:disabled):not(.wb-button--disabled) {
+  color: #ffffff !important;
+  background: linear-gradient(145deg, var(--csi-navy-800), var(--csi-blue-600)) !important;
+  border: 1px solid rgba(66, 221, 235, 0.42) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 5px 14px rgba(2, 7, 27, 0.24) !important;
+}
+
+html.codedrobe-theme body .cr-send-button:not(:disabled):not(.wb-button--disabled) :is(svg, svg *) {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+html.codedrobe-theme body .cr-send-button:not(:disabled):not(.wb-button--disabled):hover {
+  background: linear-gradient(145deg, var(--csi-blue-600), var(--csi-blue-500)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 6px 18px rgba(2, 7, 27, 0.3) !important;
+}
+
+html.codedrobe-theme body .cr-send-button:disabled,
+html.codedrobe-theme body .cr-send-button.wb-button--disabled {
+  color: rgba(40, 69, 96, 0.42) !important;
+  background: rgba(73, 112, 145, 0.12) !important;
+  border: 1px solid rgba(62, 119, 158, 0.18) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+html.codedrobe-theme body .cr-send-button:disabled :is(svg, svg *),
+html.codedrobe-theme body .cr-send-button.wb-button--disabled :is(svg, svg *) {
+  color: rgba(40, 69, 96, 0.42) !important;
+  fill: rgba(40, 69, 96, 0.42) !important;
+}
+
+a {
+  color: var(--csi-blue-600);
+  text-decoration-color: rgba(51, 103, 214, 0.32);
+  text-underline-offset: 3px;
+}
+
+/* Warm partner signal: restrained to badges rather than competing with the AI blue. */
+:is([class*="badge"], [class*="tag"])[data-status="warning"],
+:is([class*="badge"], [class*="tag"])[data-tone="warm"] {
+  color: #70421f !important;
+  background: rgba(244, 173, 98, 0.17) !important;
+  border-color: rgba(244, 173, 98, 0.32) !important;
+}
+
+* {
+  scrollbar-color: rgba(51, 103, 214, 0.34) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(51, 103, 214, 0.28);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(51, 103, 214, 0.44);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+@media (max-width: 900px) {
+  .teams-container::after {
+    width: 150px;
+    opacity: 0.065;
+  }
+
+  :is(.conversation-sidebar, .conversation-list, [data-testid*="sidebar"]) {
+    background-size: auto, auto, 104px auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

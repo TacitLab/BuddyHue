@@ -1,0 +1,47 @@
+{
+  "$schema": "../../schemas/buddyhue-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "chinasoft-orbit",
+  "name": "中软国际 · 智航伙伴",
+  "version": "1.2.8",
+  "description": "面向中软国际客户的企业级 WorkBuddy 联合主题：沉稳海军蓝、智能青蓝与克制的航天吉祥物彩蛋。",
+  "author": "BuddyHue for Chinasoft International",
+  "license": "All Rights Reserved",
+  "tags": ["enterprise", "chinasoft", "mascot", "navy", "cyan", "space"],
+  "compatibility": {
+    "workbuddy": ">=5.9.0 <5.10.0"
+  },
+  "css": "workbuddy.css",
+  "images": {
+    "cabin": "assets/orbit-cabin.png",
+    "mascots": "assets/mascot-duo.png",
+    "chinasoftLogo": "assets/chinasoft-logo-white.png"
+  },
+  "verification": {
+    "recommended": [
+      {
+        "name": "sidebar",
+        "any": [
+          ".conversation-sidebar",
+          ".conversation-list",
+          "[class*='sidebar']"
+        ]
+      },
+      {
+        "name": "workspace",
+        "any": [
+          ".teams-main-content",
+          ".main-content",
+          ".chat-container"
+        ]
+      },
+      {
+        "name": "composer",
+        "any": [
+          "[role='textbox'][contenteditable='true']",
+          ".wb-home-composer [contenteditable='true']"
+        ]
+      }
+    ]
+  }
+}

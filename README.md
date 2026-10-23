@@ -4,6 +4,8 @@ BuddyHue 是 WorkBuddy 的底层皮肤工具。它定义、校验、应用和恢
 
 当前版本：**0.3.1**。首个明确支持范围是 WorkBuddy **5.9.x**；macOS 5.9.1 已完成打包、预检、应用、验证和恢复的真实闭环测试。
 
+各精确 WorkBuddy 版本支持哪些可定制元素、哪些选择器可作为稳定契约，见 [`docs/workbuddy-versions/`](docs/workbuddy-versions/README.md)。新增版本必须新增对应能力文档，不能只扩大 SemVer 范围。
+
 ## 安全模型
 
 - 不修改 WorkBuddy 的 `app.asar`、应用签名或系统安全设置。
