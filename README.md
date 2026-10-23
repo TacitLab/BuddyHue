@@ -2,7 +2,7 @@
 
 BuddyHue 是 WorkBuddy 的底层皮肤工具。它定义、校验、应用和恢复 `.buddyhue-theme` 皮肤包，对上层 Skill、自动化脚本和未来的皮肤平台提供稳定 CLI 与 JSON 契约。
 
-当前版本：**0.3.1**。首个明确支持范围是 WorkBuddy **5.9.x**；macOS 5.9.1 已完成打包、预检、应用、验证和恢复的真实闭环测试。
+当前版本：**0.4.0**。首个明确支持范围是 WorkBuddy **5.9.x**；macOS 5.9.1 已完成打包、预检、应用、验证和恢复的真实闭环测试。
 
 各精确 WorkBuddy 版本支持哪些可定制元素、哪些选择器可作为稳定契约，见 [`docs/workbuddy-versions/`](docs/workbuddy-versions/README.md)。新增版本必须新增对应能力文档，不能只扩大 SemVer 范围。
 
@@ -62,6 +62,14 @@ wbhue verify ocean-brand
 wbhue restore
 ```
 
+BuddyHue 会在命令执行时并行检查官方仓库的最新版本。如果有新版本，会在命令输出结束后提示；断网、超时或服务不可用都会被静默忽略，不会影响原命令的结果。更新 BuddyHue：
+
+```bash
+wbhue upgrade
+```
+
+`upgrade` 始终从 BuddyHue 官方 GitHub 仓库检查并安装新版本。如果当前命令来自 `npm link`，更新会将该全局链接替换为 GitHub 版本，不会修改或删除本地源码目录。
+
 如果预检显示 WorkBuddy 需要重启，获得用户明确同意后执行：
 
 ```bash
@@ -99,6 +107,7 @@ BuddyHue 将本地数据统一放在用户主目录的隐藏目录中，小白�
 - `wbhue apply <包|引用>`：应用并验证皮肤，失败自动回滚。
 - `wbhue verify [包|引用]`：验证活动皮肤和布局状态。
 - `wbhue restore`：移除皮肤并清理应用回执。
+- `wbhue upgrade`：将 BuddyHue 更新到官方最新版本。
 - `wbhue theme create|validate|pack|inspect`：管理 BuddyHue 皮肤工程和包。
 
 所有主要命令支持 `--json`。JSON 顶层固定包含：
@@ -106,7 +115,7 @@ BuddyHue 将本地数据统一放在用户主目录的隐藏目录中，小白�
 ```json
 {
   "schemaVersion": 1,
-  "tool": { "name": "BuddyHue", "version": "0.3.1" },
+  "tool": { "name": "BuddyHue", "version": "0.4.0" },
   "command": "preflight",
   "ok": true
 }

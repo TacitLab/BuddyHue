@@ -19,6 +19,7 @@ import {
   verify,
   watch
 } from "./buddyhue.mjs";
+import { updateNotice, upgradeBuddyHue } from "./update.mjs";
 
 const HELP = `BuddyHue — WorkBuddy 专属皮肤工具
 
@@ -35,6 +36,7 @@ const HELP = `BuddyHue — WorkBuddy 专属皮肤工具
   wbhue apply <皮肤包|id[@version]> [--restart] [--watch] [--allow-untested]
   wbhue verify [皮肤包|id[@version]] [--json]
   wbhue restore [--json]
+  wbhue upgrade [--json]
   wbhue snapshot <输出.json> [--max-nodes 1500]
   wbhue theme create <目录> [--id <id>] [--name <名称>]
   wbhue theme validate <buddyhue.json>
@@ -129,6 +131,11 @@ function human(result) {
     return `${result.theme.active ? "● 当前使用\n" : ""}${result.theme.name} ${result.theme.version}\nID：${result.theme.id}\n兼容范围：${result.theme.compatibility.workbuddy}\n文件：${result.theme.file}`;
   }
   if (result.command === "remove") return `✓ 已删除 ${result.removed.length} 个皮肤版本。`;
+  if (result.command === "upgrade") {
+    if (result.updated === false) return `✓ BuddyHue 已是最新版本：${result.version ?? result.previousVersion}`;
+    if (result.updated === null) return "✓ BuddyHue 更新命令已完成；请重新运行命令确认版本。";
+    return `✓ BuddyHue 已更新：${result.previousVersion}${result.version ? ` → ${result.version}` : ""}`;
+  }
   if (result.command === "theme validate") return `✓ 皮肤有效：${result.theme.name} ${result.theme.version}\n兼容范围：${result.compatibility.workbuddy}\n警告：${result.warnings.length}`;
   if (result.command === "theme create") return `✓ 已创建皮肤工程：${result.output}\n下一步：编辑 workbuddy.css，然后运行 wbhue theme validate ${result.manifest}`;
   if (result.command === "theme pack") return `✓ 已打包：${result.output}\n警告：${result.warnings.length}`;
@@ -174,11 +181,20 @@ export function safeErrorMessage(message) {
   });
 }
 
-export async function run(argv, io = console) {
+export async function run(argv, io = console, runtime = {}) {
   let parsed;
+  const updateCheck = runtime.updateCheck
+    ? Promise.resolve(runtime.updateCheck).catch(() => null)
+    : null;
+  const showUpdateNotice = async () => {
+    if (!updateCheck || parsed?.flags.json || parsed?.positionals?.[0] === "upgrade") return;
+    const notice = updateNotice(await updateCheck);
+    if (notice) io.log(`\n${notice}`);
+  };
   try {
     if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) {
       io.log(HELP);
+      await showUpdateNotice();
       return 0;
     }
     parsed = parse(argv);
@@ -200,10 +216,12 @@ export async function run(argv, io = console) {
       if (flags.watch) {
         io.log(flags.json ? JSON.stringify(jsonEnvelope(result), null, 2) : human(result));
         await watch(theme, { ...flags, onEvent: flags.json ? (event) => io.log(JSON.stringify(jsonEnvelope({ command: "watch", event }))) : undefined });
+        await showUpdateNotice();
         return 0;
       }
     } else if (command === "verify") result = await verify(subcommand, flags);
     else if (command === "restore") result = await restore(flags);
+    else if (command === "upgrade") result = await (runtime.upgrade ?? upgradeBuddyHue)(BUDDYHUE_VERSION);
     else if (command === "snapshot") result = await snapshot(requireValue(subcommand, "wbhue snapshot <输出.json>"), flags);
     else if (command === "theme" && subcommand === "create") result = await createThemeProject(
       requireValue(positionals[2], "wbhue theme create <目录>"),
@@ -222,6 +240,7 @@ export async function run(argv, io = console) {
       throw error;
     }
     io.log(flags.json ? JSON.stringify(jsonEnvelope(result), null, 2) : human(result));
+    await showUpdateNotice();
     return result.ok === false ? 5 : 0;
   } catch (error) {
     const code = exitCodeFor(error);
@@ -232,6 +251,7 @@ export async function run(argv, io = console) {
       io.error(`BuddyHue：${message}`);
       if (error.code === "CODEDROBE_RESTART_REQUIRED") io.error("请重新执行并添加 --restart；BuddyHue 仅在你明确允许时重启 WorkBuddy。");
     }
+    await showUpdateNotice();
     return code;
   }
 }

@@ -30,7 +30,7 @@ import {
   writeBuddyHuePackage
 } from "./theme-package.mjs";
 
-export const BUDDYHUE_VERSION = "0.3.1";
+export const BUDDYHUE_VERSION = "0.4.0";
 
 function summarizeTargets(targets) {
   return targets.map(({ targetId, title, url, result }) => ({
