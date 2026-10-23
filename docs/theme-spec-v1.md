@@ -107,7 +107,7 @@ v1 只接受以下形式：
 
 ## 7. 本地皮肤库
 
-BuddyHue 0.3 起可以把验证通过的 `.buddyhue-theme` 安装到本地皮肤库。包按 `<theme.id>/<theme.version>.buddyhue-theme` 存储，同一 ID 可共存多个版本。
+BuddyHue 0.3 起可以把验证通过的 `.buddyhue-theme` 安装到 `~/.buddyhue/themes/` 本地皮肤库。包按 `<theme.id>/<theme.version>.buddyhue-theme` 存储，同一 ID 可共存多个版本。
 
 安装不会修改包内容或重新计算作者元数据。相同 ID 和版本但摘要不同的包视为冲突，必须显式使用 `--force` 替换；当前正在使用的版本不能删除。
 

@@ -7,7 +7,7 @@ import { clearState, readState, recordAppliedState, stateFilename } from "../src
 
 test("stores and clears a minimal local apply receipt", async () => {
   const stateDir = await mkdtemp(path.join(os.tmpdir(), "buddyhue-state-"));
-  const options = { env: { BUDDYHUE_STATE_DIR: stateDir } };
+  const options = { env: { BUDDYHUE_HOME: stateDir } };
   const artifact = {
     file: "/tmp/theme.buddyhue-theme",
     format: "buddyhue-theme",
@@ -23,9 +23,17 @@ test("stores and clears a minimal local apply receipt", async () => {
   assert.equal(await readState(options), null);
 });
 
-test("uses the platform state directory unless overridden", () => {
+test("uses the BuddyHue home directory for state", () => {
   assert.equal(
-    stateFilename({ env: { BUDDYHUE_STATE_DIR: "/tmp/custom-buddyhue" }, platform: "darwin", home: "/Users/example" }),
+    stateFilename({ env: { BUDDYHUE_HOME: "/tmp/custom-buddyhue" }, home: "/Users/example" }),
     "/tmp/custom-buddyhue/state.json"
+  );
+  assert.equal(
+    stateFilename({ env: {}, platform: "win32", home: "/Users/example" }),
+    "/Users/example/.buddyhue/state.json"
+  );
+  assert.equal(
+    stateFilename({ env: { BUDDYHUE_HOME: "~/.custom-buddyhue" }, home: "/Users/example" }),
+    "/Users/example/.custom-buddyhue/state.json"
   );
 });

@@ -1,4 +1,3 @@
-import { homedir } from "node:os";
 import path from "node:path";
 import {
   access,
@@ -19,6 +18,7 @@ import {
   validateBuddyHuePackage,
   readBuddyHuePackage
 } from "./theme-package.mjs";
+import { buddyHueHome } from "./paths.mjs";
 
 const SELECTOR = /^([a-zA-Z0-9][a-zA-Z0-9_-]*)(?:@(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?))?$/;
 
@@ -28,11 +28,8 @@ function libraryError(code, message) {
   return error;
 }
 
-export function libraryDirectory({ env = process.env, platform = process.platform, home = homedir() } = {}) {
-  if (env.BUDDYHUE_LIBRARY_DIR) return path.resolve(env.BUDDYHUE_LIBRARY_DIR);
-  if (platform === "darwin") return path.join(home, "Library", "Application Support", "BuddyHue", "themes");
-  if (platform === "win32") return path.join(env.LOCALAPPDATA ?? path.join(home, "AppData", "Local"), "BuddyHue", "themes");
-  return path.join(env.XDG_DATA_HOME ?? path.join(home, ".local", "share"), "buddyhue", "themes");
+export function libraryDirectory({ env = process.env, home } = {}) {
+  return path.join(buddyHueHome({ env, ...(home ? { home } : {}) }), "themes");
 }
 
 export function parseThemeSelector(value) {

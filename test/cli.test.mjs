@@ -35,7 +35,7 @@ test("JSON errors use the stable BuddyHue envelope", async () => {
   assert.equal(code, 2);
   assert.equal(payload.schemaVersion, 1);
   assert.equal(payload.tool.name, "BuddyHue");
-  assert.equal(payload.tool.version, "0.3.0");
+  assert.equal(payload.tool.version, "0.3.1");
   assert.equal(payload.error.code, "BUDDYHUE_USAGE");
 });
 

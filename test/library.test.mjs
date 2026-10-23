@@ -32,10 +32,18 @@ async function createPackage(root, version, css = ":root { --accent: blue; }\n")
   return output;
 }
 
-test("uses the platform library directory unless overridden", () => {
+test("uses the BuddyHue home directory", () => {
   assert.equal(
-    libraryDirectory({ env: { BUDDYHUE_LIBRARY_DIR: "/tmp/custom-buddyhue-library" }, platform: "darwin", home: "/Users/example" }),
-    "/tmp/custom-buddyhue-library"
+    libraryDirectory({ env: { BUDDYHUE_HOME: "/tmp/custom-buddyhue" }, home: "/Users/example" }),
+    "/tmp/custom-buddyhue/themes"
+  );
+  assert.equal(
+    libraryDirectory({ env: {}, platform: "darwin", home: "/Users/example" }),
+    "/Users/example/.buddyhue/themes"
+  );
+  assert.equal(
+    libraryDirectory({ env: { BUDDYHUE_HOME: "~/.custom-buddyhue" }, home: "/Users/example" }),
+    "/Users/example/.custom-buddyhue/themes"
   );
 });
 
@@ -47,7 +55,7 @@ test("parses installed theme references", () => {
 
 test("installs, lists and resolves the newest theme version", async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), "buddyhue-library-"));
-  const options = { env: { BUDDYHUE_LIBRARY_DIR: path.join(temp, "library") } };
+  const options = { env: { BUDDYHUE_HOME: path.join(temp, ".buddyhue") } };
   const versionOne = await createPackage(temp, "1.0.0");
   const versionTwo = await createPackage(temp, "1.1.0", ":root { --accent: purple; }\n");
   const firstInstall = await installThemePackage(versionOne, options);
@@ -64,7 +72,7 @@ test("installs, lists and resolves the newest theme version", async () => {
 
 test("requires force to replace different content at the same version", async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), "buddyhue-conflict-"));
-  const options = { env: { BUDDYHUE_LIBRARY_DIR: path.join(temp, "library") } };
+  const options = { env: { BUDDYHUE_HOME: path.join(temp, ".buddyhue") } };
   const original = await createPackage(temp, "1.0.0");
   await installThemePackage(original, options);
   const replacement = await createPackage(temp, "1.0.0", ":root { --accent: green; }\n");
@@ -75,7 +83,7 @@ test("requires force to replace different content at the same version", async ()
 
 test("force repairs a corrupted installed package", async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), "buddyhue-repair-"));
-  const options = { env: { BUDDYHUE_LIBRARY_DIR: path.join(temp, "library") } };
+  const options = { env: { BUDDYHUE_HOME: path.join(temp, ".buddyhue") } };
   const source = await createPackage(temp, "1.0.0");
   const installed = await installThemePackage(source, options);
   await writeFile(installed.entry.file, "{}\n");
@@ -86,7 +94,7 @@ test("force repairs a corrupted installed package", async () => {
 
 test("protects the active version and removes inactive versions", async () => {
   const temp = await mkdtemp(path.join(os.tmpdir(), "buddyhue-remove-"));
-  const options = { env: { BUDDYHUE_LIBRARY_DIR: path.join(temp, "library") } };
+  const options = { env: { BUDDYHUE_HOME: path.join(temp, ".buddyhue") } };
   const versionOne = await createPackage(temp, "1.0.0");
   const versionTwo = await createPackage(temp, "1.1.0", ":root { --accent: purple; }\n");
   await installThemePackage(versionOne, options);

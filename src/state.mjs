@@ -1,14 +1,11 @@
-import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { buddyHueHome } from "./paths.mjs";
 
 export const STATE_SCHEMA_VERSION = 1;
 
-export function stateFilename({ env = process.env, platform = process.platform, home = homedir() } = {}) {
-  if (env.BUDDYHUE_STATE_DIR) return join(env.BUDDYHUE_STATE_DIR, "state.json");
-  if (platform === "darwin") return join(home, "Library", "Application Support", "BuddyHue", "state.json");
-  if (platform === "win32") return join(env.LOCALAPPDATA ?? join(home, "AppData", "Local"), "BuddyHue", "state.json");
-  return join(env.XDG_STATE_HOME ?? join(home, ".local", "state"), "buddyhue", "state.json");
+export function stateFilename({ env = process.env, home } = {}) {
+  return join(buddyHueHome({ env, ...(home ? { home } : {}) }), "state.json");
 }
 
 export async function readState(options = {}) {

@@ -2,7 +2,7 @@
 
 BuddyHue 是 WorkBuddy 的底层皮肤工具。它定义、校验、应用和恢复 `.buddyhue-theme` 皮肤包，对上层 Skill、自动化脚本和未来的皮肤平台提供稳定 CLI 与 JSON 契约。
 
-当前版本：**0.3.0**。首个明确支持范围是 WorkBuddy **5.9.x**；macOS 5.9.1 已完成打包、预检、应用、验证和恢复的真实闭环测试。
+当前版本：**0.3.1**。首个明确支持范围是 WorkBuddy **5.9.x**；macOS 5.9.1 已完成打包、预检、应用、验证和恢复的真实闭环测试。
 
 ## 安全模型
 
@@ -68,18 +68,25 @@ wbhue apply ocean-brand --restart
 
 ## 本地皮肤库
 
-BuddyHue 会管理已经安装的皮肤包，不依赖下载目录长期保存文件：
+BuddyHue 将本地数据统一放在用户主目录的隐藏目录中，小白用户无需直接管理：
 
-- macOS：`~/Library/Application Support/BuddyHue/themes/`
-- Windows：`%LOCALAPPDATA%\BuddyHue\themes\`
-- Linux：`$XDG_DATA_HOME/buddyhue/themes/`，未设置时使用 `~/.local/share/buddyhue/themes/`
+```text
+~/.buddyhue/
+├── state.json
+└── themes/
+    └── <theme-id>/
+        └── <version>.buddyhue-theme
+```
 
 每个皮肤按 `ID/版本` 独立保存。删除当前正在使用的版本会被拒绝，需先执行 `wbhue restore`。
+
+`wbhue home` 可查询实际位置。高级用户可通过 `BUDDYHUE_HOME` 修改整个数据目录。
 
 ## 命令
 
 - `wbhue doctor`：检查安装、版本、运行状态和皮肤通道。
 - `wbhue status`：读取活动皮肤和本地应用回执。
+- `wbhue home`：显示 BuddyHue 数据目录、皮肤库和状态文件位置。
 - `wbhue install <包>`：验证并安装到本地皮肤库；同版本不同内容需显式添加 `--force`。
 - `wbhue ls`：列出所有已安装版本，并标记当前使用的皮肤。
 - `wbhue info <id[@version]>`：查看指定皮肤；省略版本时选择最高版本。
@@ -97,7 +104,7 @@ BuddyHue 会管理已经安装的皮肤包，不依赖下载目录长期保存�
 ```json
 {
   "schemaVersion": 1,
-  "tool": { "name": "BuddyHue", "version": "0.3.0" },
+  "tool": { "name": "BuddyHue", "version": "0.3.1" },
   "command": "preflight",
   "ok": true
 }

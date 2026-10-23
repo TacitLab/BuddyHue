@@ -11,7 +11,8 @@ import {
 } from "@codedrobe/core";
 import { isSupportedVersion, workbuddyAdapter } from "./adapter.mjs";
 import { assertThemePath, runtimeStatus } from "./system.mjs";
-import { clearState, readState, recordAppliedState } from "./state.mjs";
+import { clearState, readState, recordAppliedState, stateFilename } from "./state.mjs";
+import { buddyHueHome } from "./paths.mjs";
 import {
   getInstalledTheme,
   installThemePackage,
@@ -29,7 +30,7 @@ import {
   writeBuddyHuePackage
 } from "./theme-package.mjs";
 
-export const BUDDYHUE_VERSION = "0.3.0";
+export const BUDDYHUE_VERSION = "0.3.1";
 
 function summarizeTargets(targets) {
   return targets.map(({ targetId, title, url, result }) => ({
@@ -347,6 +348,16 @@ export async function listThemes(options = {}) {
   const receipt = await readState(options);
   const result = await listInstalledThemes({ ...options, active: receipt?.active ?? null });
   return { command: "ls", ok: true, ...result };
+}
+
+export function home(options = {}) {
+  return {
+    command: "home",
+    ok: true,
+    directory: buddyHueHome(options),
+    themes: libraryDirectory(options),
+    state: stateFilename(options)
+  };
 }
 
 export async function infoTheme(selector, options = {}) {

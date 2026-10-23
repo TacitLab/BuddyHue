@@ -3,6 +3,7 @@ import {
   BUDDYHUE_VERSION,
   createThemeProject,
   doctor,
+  home,
   infoTheme,
   installTheme,
   inspectTheme,
@@ -24,6 +25,7 @@ const HELP = `BuddyHue — WorkBuddy 专属皮肤工具
 用法：
   wbhue doctor [--json]
   wbhue status [--json]
+  wbhue home [--json]
   wbhue install <皮肤包> [--force] [--json]
   wbhue ls [--json]
   wbhue info <id[@version]> [--json]
@@ -105,6 +107,7 @@ function human(result) {
       ? `当前皮肤：${result.theme.id} ${result.theme.version}`
       : `当前未检测到 BuddyHue 皮肤。${result.running && !result.cdp.ready ? " WorkBuddy 未通过 BuddyHue 启动，无法读取窗口状态。" : ""}`;
   }
+  if (result.command === "home") return `BuddyHue：${result.directory}\n皮肤库：${result.themes}\n状态：${result.state}`;
   if (result.command === "preflight") {
     return [
       `${result.ready ? "✓" : "!"} 预检：${result.ready ? "可以应用" : "暂不可应用"}`,
@@ -184,6 +187,7 @@ export async function run(argv, io = console) {
     let result;
     if (command === "doctor") result = await doctor(flags);
     else if (command === "status") result = await status(flags);
+    else if (command === "home") result = home(flags);
     else if (command === "install") result = await installTheme(requireValue(subcommand, "wbhue install <皮肤包>"), flags);
     else if (["ls", "list"].includes(command)) result = await listThemes(flags);
     else if (command === "info") result = await infoTheme(requireValue(subcommand, "wbhue info <id[@version]>"), flags);
