@@ -10,17 +10,19 @@ BuddyHue 的 Skill 应当是“薄编排层”，不在 SKILL.md 内复制注入
 4. 执行 `wbhue theme validate <buddyhue.json> --json`。
 5. 若只有 lint 警告，解释风险并继续；格式错误必须修复。
 6. 执行 `wbhue theme pack <buddyhue.json> --output <id>.buddyhue-theme --json`。
-7. 向用户展示皮肤名称、版本、素材数量、目标应用和警告数。
+7. 执行 `wbhue install <id>.buddyhue-theme --json`，把验证后的包加入本地皮肤库。
+8. 向用户展示皮肤名称、版本、素材数量、目标应用和警告数。
 
 ## 能力二：应用皮肤
 
 1. 执行 `wbhue doctor --json`。
 2. 若退出码为 `3`，说明版本尚未验证；只有用户明确同意后才添加 `--allow-untested`。
-3. 执行 `wbhue preflight <package> --json`，完成包、版本和当前界面的只读检查。
-4. 执行 `wbhue apply <package> --json`。
-5. 若退出码为 `4`，向用户说明需要重启 WorkBuddy；只有明确同意后才重试并添加 `--restart`。
-6. 执行 `wbhue verify <package> --json`。
-7. 若验证失败，报告自动回滚结果，并提供 `wbhue restore --json` 作为显式恢复动作。
+3. 若用户没有指定皮肤，执行 `wbhue ls --json`，仅从已安装皮肤中选择。
+4. 执行 `wbhue preflight <id[@version]|package> --json`，完成包、版本和当前界面的只读检查。
+5. 执行 `wbhue apply <id[@version]|package> --json`。
+6. 若退出码为 `4`，向用户说明需要重启 WorkBuddy；只有明确同意后才重试并添加 `--restart`。
+7. 执行 `wbhue verify <id[@version]|package> --json`。
+8. 若验证失败，报告自动回滚结果，并提供 `wbhue restore --json` 作为显式恢复动作。
 
 ## 不允许自动做的事
 

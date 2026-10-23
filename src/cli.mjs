@@ -3,10 +3,14 @@ import {
   BUDDYHUE_VERSION,
   createThemeProject,
   doctor,
+  infoTheme,
+  installTheme,
   inspectTheme,
+  listThemes,
   packTheme,
   preflight,
   probe,
+  removeTheme,
   restore,
   snapshot,
   status,
@@ -20,10 +24,14 @@ const HELP = `BuddyHue — WorkBuddy 专属皮肤工具
 用法：
   wbhue doctor [--json]
   wbhue status [--json]
-  wbhue probe [皮肤包] [--json]
-  wbhue preflight <皮肤包> [--json]
-  wbhue apply <皮肤包> [--restart] [--watch] [--allow-untested]
-  wbhue verify [皮肤包] [--json]
+  wbhue install <皮肤包> [--force] [--json]
+  wbhue ls [--json]
+  wbhue info <id[@version]> [--json]
+  wbhue remove <id[@version]> [--json]
+  wbhue probe [皮肤包|id[@version]] [--json]
+  wbhue preflight <皮肤包|id[@version]> [--json]
+  wbhue apply <皮肤包|id[@version]> [--restart] [--watch] [--allow-untested]
+  wbhue verify [皮肤包|id[@version]] [--json]
   wbhue restore [--json]
   wbhue snapshot <输出.json> [--max-nodes 1500]
   wbhue theme create <目录> [--id <id>] [--name <名称>]
@@ -106,6 +114,18 @@ function human(result) {
       `需要重启：${result.requiresRestart ? "是" : "否"}`
     ].join("\n");
   }
+  if (result.command === "install") {
+    return `${result.alreadyInstalled ? "✓ 已在皮肤库中" : "✓ 已安装"}：${result.theme.name} ${result.theme.version}\nID：${result.theme.id}`;
+  }
+  if (result.command === "ls") {
+    if (!result.themes.length) return `本地皮肤库为空。\n目录：${result.directory}`;
+    const lines = result.themes.map((theme) => `${theme.active ? "●" : "·"} ${theme.name} ${theme.version}  (${theme.id})`);
+    return [`已安装皮肤：${result.themes.length}`, ...lines, ...(result.errors.length ? [`警告：${result.errors.length} 个无效文件`] : [])].join("\n");
+  }
+  if (result.command === "info") {
+    return `${result.theme.active ? "● 当前使用\n" : ""}${result.theme.name} ${result.theme.version}\nID：${result.theme.id}\n兼容范围：${result.theme.compatibility.workbuddy}\n文件：${result.theme.file}`;
+  }
+  if (result.command === "remove") return `✓ 已删除 ${result.removed.length} 个皮肤版本。`;
   if (result.command === "theme validate") return `✓ 皮肤有效：${result.theme.name} ${result.theme.version}\n兼容范围：${result.compatibility.workbuddy}\n警告：${result.warnings.length}`;
   if (result.command === "theme create") return `✓ 已创建皮肤工程：${result.output}\n下一步：编辑 workbuddy.css，然后运行 wbhue theme validate ${result.manifest}`;
   if (result.command === "theme pack") return `✓ 已打包：${result.output}\n警告：${result.warnings.length}`;
@@ -125,6 +145,8 @@ function exitCodeFor(error) {
   if (["BUDDYHUE_INVALID_PACKAGE", "BUDDYHUE_INTEGRITY_FAILED", "BUDDYHUE_OUTPUT_EXISTS"].includes(error.code)) return 6;
   if (error.code === "BUDDYHUE_THEME_INCOMPATIBLE") return 7;
   if (error.code === "BUDDYHUE_APP_NOT_FOUND") return 8;
+  if (error.code === "BUDDYHUE_THEME_NOT_INSTALLED") return 9;
+  if (["BUDDYHUE_LIBRARY_CONFLICT", "BUDDYHUE_ACTIVE_THEME"].includes(error.code)) return 10;
   return 1;
 }
 
@@ -162,10 +184,14 @@ export async function run(argv, io = console) {
     let result;
     if (command === "doctor") result = await doctor(flags);
     else if (command === "status") result = await status(flags);
+    else if (command === "install") result = await installTheme(requireValue(subcommand, "wbhue install <皮肤包>"), flags);
+    else if (["ls", "list"].includes(command)) result = await listThemes(flags);
+    else if (command === "info") result = await infoTheme(requireValue(subcommand, "wbhue info <id[@version]>"), flags);
+    else if (command === "remove") result = await removeTheme(requireValue(subcommand, "wbhue remove <id[@version]>"), flags);
     else if (command === "probe") result = await probe({ ...flags, theme: subcommand });
-    else if (command === "preflight") result = await preflight(requireValue(subcommand, "wbhue preflight <皮肤包>"), flags);
+    else if (command === "preflight") result = await preflight(requireValue(subcommand, "wbhue preflight <皮肤包|id[@version]>"), flags);
     else if (command === "apply") {
-      const theme = requireValue(subcommand, "wbhue apply <皮肤包>");
+      const theme = requireValue(subcommand, "wbhue apply <皮肤包|id[@version]>");
       result = await apply(theme, flags);
       if (flags.watch) {
         io.log(flags.json ? JSON.stringify(jsonEnvelope(result), null, 2) : human(result));

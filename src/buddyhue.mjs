@@ -13,6 +13,14 @@ import { isSupportedVersion, workbuddyAdapter } from "./adapter.mjs";
 import { assertThemePath, runtimeStatus } from "./system.mjs";
 import { clearState, readState, recordAppliedState } from "./state.mjs";
 import {
+  getInstalledTheme,
+  installThemePackage,
+  libraryDirectory,
+  listInstalledThemes,
+  removeInstalledTheme,
+  resolveThemeInput
+} from "./library.mjs";
+import {
   BUDDYHUE_EXTENSION,
   BUDDYHUE_FORMAT,
   buildBuddyHuePackage,
@@ -21,7 +29,7 @@ import {
   writeBuddyHuePackage
 } from "./theme-package.mjs";
 
-export const BUDDYHUE_VERSION = "0.2.0";
+export const BUDDYHUE_VERSION = "0.3.0";
 
 function summarizeTargets(targets) {
   return targets.map(({ targetId, title, url, result }) => ({
@@ -74,7 +82,7 @@ export async function doctor(options = {}) {
 }
 
 export async function probe(options = {}) {
-  const artifact = options.theme ? await loadArtifact(options.theme) : null;
+  const artifact = options.theme ? await loadArtifact(options.theme, options) : null;
   const targets = await probeApp({
     adapter: workbuddyAdapter,
     targetTheme: artifact?.targetTheme ?? null,
@@ -85,7 +93,7 @@ export async function probe(options = {}) {
 }
 
 export async function preflight(filename, options = {}) {
-  const artifact = await loadArtifact(filename);
+  const artifact = await loadArtifact(filename, options);
   const runtime = await runtimeStatus(options);
   const adapterCompatible = isSupportedVersion(runtime.installation?.version);
   const packageCompatible = artifact.compatibility
@@ -145,13 +153,14 @@ export async function status(options = {}) {
   };
 }
 
-export async function loadArtifact(filename) {
-  const resolved = await assertThemePath(filename);
+export async function loadArtifact(filename, options = {}) {
+  const input = await resolveThemeInput(filename, options);
+  const resolved = await assertThemePath(input);
   return loadThemeArtifact(resolved);
 }
 
-export async function loadTarget(filename) {
-  return (await loadArtifact(filename)).targetTheme;
+export async function loadTarget(filename, options = {}) {
+  return (await loadArtifact(filename, options)).targetTheme;
 }
 
 function artifactSummary(artifact) {
@@ -167,7 +176,7 @@ function artifactSummary(artifact) {
 }
 
 export async function apply(filename, options = {}) {
-  const artifact = await loadArtifact(filename);
+  const artifact = await loadArtifact(filename, options);
   const runtime = await runtimeStatus(options);
   const supported = isSupportedVersion(runtime.installation?.version);
   if (!runtime.installation) {
@@ -222,7 +231,7 @@ export async function apply(filename, options = {}) {
 }
 
 export async function verify(filename, options = {}) {
-  const targetTheme = filename ? await loadTarget(filename) : null;
+  const targetTheme = filename ? await loadTarget(filename, options) : null;
   const targets = await verifyTheme({
     adapter: workbuddyAdapter,
     targetTheme,
@@ -259,7 +268,7 @@ export async function restore(options = {}) {
 }
 
 export async function watch(filename, options = {}) {
-  const targetTheme = await loadTarget(filename);
+  const targetTheme = await loadTarget(filename, options);
   const controller = new AbortController();
   const stop = () => controller.abort();
   process.once("SIGINT", stop);
@@ -320,6 +329,36 @@ export async function validateTheme(manifest) {
 export async function inspectTheme(filename) {
   const artifact = await loadArtifact(filename);
   return { command: "theme inspect", ok: true, ...artifactSummary(artifact) };
+}
+
+export async function installTheme(filename, options = {}) {
+  const receipt = await readState(options);
+  const result = await installThemePackage(path.resolve(filename), { ...options, active: receipt?.active ?? null });
+  return {
+    command: "install",
+    ok: true,
+    alreadyInstalled: result.alreadyInstalled,
+    theme: result.entry,
+    directory: libraryDirectory(options)
+  };
+}
+
+export async function listThemes(options = {}) {
+  const receipt = await readState(options);
+  const result = await listInstalledThemes({ ...options, active: receipt?.active ?? null });
+  return { command: "ls", ok: true, ...result };
+}
+
+export async function infoTheme(selector, options = {}) {
+  const receipt = await readState(options);
+  const theme = await getInstalledTheme(selector, { ...options, active: receipt?.active ?? null });
+  return { command: "info", ok: true, theme };
+}
+
+export async function removeTheme(selector, options = {}) {
+  const receipt = await readState(options);
+  const result = await removeInstalledTheme(selector, { ...options, active: receipt?.active ?? null });
+  return { command: "remove", ok: true, ...result };
 }
 
 function safeThemeId(value) {

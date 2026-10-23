@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "id": "buddyhue-starter",
   "name": "BuddyHue Starter",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A safe starter theme for WorkBuddy 5.9.x.",
   "author": "BuddyHue",
   "license": "UNLICENSED",

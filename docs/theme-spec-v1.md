@@ -1,6 +1,6 @@
 # BuddyHue Theme Package Specification v1
 
-状态：Stable for BuddyHue 0.2.x
+状态：Stable for BuddyHue 0.2+
 
 扩展名：`.buddyhue-theme`
 
@@ -105,7 +105,15 @@ v1 只接受以下形式：
 
 完整性摘要用于检测传输损坏和未声明修改，不等价于作者签名。v1 不定义签名或 DRM；未来平台可在不破坏 v1 本地包的前提下增加独立签名和授权层。
 
-## 7. 应用事务
+## 7. 本地皮肤库
+
+BuddyHue 0.3 起可以把验证通过的 `.buddyhue-theme` 安装到本地皮肤库。包按 `<theme.id>/<theme.version>.buddyhue-theme` 存储，同一 ID 可共存多个版本。
+
+安装不会修改包内容或重新计算作者元数据。相同 ID 和版本但摘要不同的包视为冲突，必须显式使用 `--force` 替换；当前正在使用的版本不能删除。
+
+`wbhue apply <id>` 默认选择 SemVer 最高版本，`wbhue apply <id>@<version>` 使用指定版本。皮肤库只是本地管理层，不改变 v1 包格式。
+
+## 8. 应用事务
 
 BuddyHue 的标准事务为：
 
@@ -118,8 +126,8 @@ BuddyHue 的标准事务为：
 7. 任何步骤失败时移除 renderer 变更并回滚 host 设置。
 8. 成功后写入最小本地应用回执；恢复时清理回执。
 
-## 8. 向后兼容
+## 9. 向后兼容
 
-BuddyHue 0.2 可直接读取 `.codedrobe-theme` 作为迁移格式。旧格式没有 BuddyHue 兼容范围和完整性摘要，`theme inspect` 与 `preflight` 会明确显示这些字段缺失。
+BuddyHue 0.2+ 可直接读取 `.codedrobe-theme` 作为迁移格式。旧格式没有 BuddyHue 兼容范围和完整性摘要，`theme inspect` 与 `preflight` 会明确显示这些字段缺失。旧格式只能通过文件路径临时应用，不能安装到本地皮肤库。
 
 BuddyHue v1 解析器拒绝未知字段。新增结构性能力需要提升 `schemaVersion`，防止旧客户端静默忽略影响安全或展示的重要字段。

@@ -1,6 +1,6 @@
 {
   "name": "buddyhue",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A WorkBuddy-first theme CLI powered by CodeDrobe Core.",
   "type": "module",
   "private": true,
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check bin/wbhue.mjs && node --check src/cli.mjs && node --check src/buddyhue.mjs && node --check src/theme-package.mjs && node --check src/state.mjs",
+    "check": "node --check bin/wbhue.mjs && node --check src/cli.mjs && node --check src/buddyhue.mjs && node --check src/theme-package.mjs && node --check src/library.mjs && node --check src/state.mjs",
     "smoke": "node ./bin/wbhue.mjs --help"
   },
   "engines": {
