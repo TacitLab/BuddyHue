@@ -1,0 +1,26 @@
+{
+  "$schema": "../../schemas/buddyhue-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "buddyhue-starter",
+  "name": "BuddyHue Starter",
+  "version": "0.2.0",
+  "description": "A safe starter theme for WorkBuddy 5.9.x.",
+  "author": "BuddyHue",
+  "license": "UNLICENSED",
+  "tags": ["starter", "minimal"],
+  "compatibility": {
+    "workbuddy": ">=5.9.0 <5.10.0"
+  },
+  "css": "workbuddy.css",
+  "verification": {
+    "recommended": [
+      {
+        "name": "composer",
+        "any": [
+          "[role='textbox'][contenteditable='true']",
+          ".wb-home-composer [contenteditable='true']"
+        ]
+      }
+    ]
+  }
+}

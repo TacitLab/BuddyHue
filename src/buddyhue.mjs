@@ -3,21 +3,25 @@ import { access, mkdir, writeFile } from "node:fs/promises";
 import {
   VERSION as codeDrobeVersion,
   applySkin,
-  buildThemePackage,
-  lintThemePackage,
   probeApp,
-  readThemePackage,
-  resolveThemeTarget,
   restoreSkin,
   snapshotDom,
   verifyTheme,
-  watchTheme,
-  writeThemePackage
+  watchTheme
 } from "@codedrobe/core";
 import { isSupportedVersion, workbuddyAdapter } from "./adapter.mjs";
 import { assertThemePath, runtimeStatus } from "./system.mjs";
+import { clearState, readState, recordAppliedState } from "./state.mjs";
+import {
+  BUDDYHUE_EXTENSION,
+  BUDDYHUE_FORMAT,
+  buildBuddyHuePackage,
+  isVersionCompatible,
+  loadThemeArtifact,
+  writeBuddyHuePackage
+} from "./theme-package.mjs";
 
-export const BUDDYHUE_VERSION = "0.1.0";
+export const BUDDYHUE_VERSION = "0.2.0";
 
 function summarizeTargets(targets) {
   return targets.map(({ targetId, title, url, result }) => ({
@@ -70,19 +74,61 @@ export async function doctor(options = {}) {
 }
 
 export async function probe(options = {}) {
-  const targetTheme = options.theme ? await loadTarget(options.theme) : null;
+  const artifact = options.theme ? await loadArtifact(options.theme) : null;
   const targets = await probeApp({
     adapter: workbuddyAdapter,
-    targetTheme,
+    targetTheme: artifact?.targetTheme ?? null,
     port: options.port ?? workbuddyAdapter.defaultPort,
     timeoutMs: options.timeoutMs
   });
   return { command: "probe", ok: targets.some((item) => item.result.compatible), targets: summarizeTargets(targets) };
 }
 
+export async function preflight(filename, options = {}) {
+  const artifact = await loadArtifact(filename);
+  const runtime = await runtimeStatus(options);
+  const adapterCompatible = isSupportedVersion(runtime.installation?.version);
+  const packageCompatible = artifact.compatibility
+    ? isVersionCompatible(runtime.installation?.version, artifact.compatibility.workbuddy)
+    : null;
+  let targets = [];
+  if (runtime.cdp.ready) {
+    targets = await probeApp({
+      adapter: workbuddyAdapter,
+      targetTheme: artifact.targetTheme,
+      port: options.port ?? workbuddyAdapter.defaultPort,
+      timeoutMs: options.timeoutMs
+    });
+  }
+  const domCompatible = targets.length ? targets.some((item) => item.result.compatible) : null;
+  const requiresRestart = runtime.running && !runtime.cdp.ready;
+  const ready = Boolean(runtime.installation)
+    && adapterCompatible
+    && packageCompatible !== false
+    && domCompatible !== false;
+  return {
+    command: "preflight",
+    ok: ready,
+    ready,
+    requiresRestart,
+    artifact: artifactSummary(artifact),
+    compatibility: {
+      appVersion: runtime.installation?.version ?? null,
+      adapterRange: "5.9.x",
+      adapterCompatible,
+      packageRange: artifact.compatibility?.workbuddy ?? null,
+      packageCompatible,
+      domCompatible
+    },
+    runtime,
+    targets: summarizeTargets(targets)
+  };
+}
+
 export async function status(options = {}) {
   const runtime = await runtimeStatus(options);
-  if (!runtime.cdp.ready) return { command: "status", ok: true, ...runtime, theme: null };
+  const receipt = await readState();
+  if (!runtime.cdp.ready) return { command: "status", ok: true, ...runtime, theme: receipt?.active?.theme ?? null, receipt };
   const targets = await verifyTheme({
     adapter: workbuddyAdapter,
     port: options.port ?? workbuddyAdapter.defaultPort,
@@ -94,17 +140,34 @@ export async function status(options = {}) {
     ok: true,
     ...runtime,
     theme: first ? { id: first.result.themeId, version: first.result.version } : null,
+    receipt,
     targets: summarizeTargets(targets)
   };
 }
 
-export async function loadTarget(filename) {
+export async function loadArtifact(filename) {
   const resolved = await assertThemePath(filename);
-  const bundle = await readThemePackage(resolved);
-  return resolveThemeTarget(bundle, workbuddyAdapter.id);
+  return loadThemeArtifact(resolved);
+}
+
+export async function loadTarget(filename) {
+  return (await loadArtifact(filename)).targetTheme;
+}
+
+function artifactSummary(artifact) {
+  return {
+    file: artifact.file,
+    format: artifact.format,
+    theme: artifact.theme,
+    compatibility: artifact.compatibility,
+    integrity: artifact.integrity,
+    images: artifact.images,
+    warnings: artifact.warnings
+  };
 }
 
 export async function apply(filename, options = {}) {
+  const artifact = await loadArtifact(filename);
   const runtime = await runtimeStatus(options);
   const supported = isSupportedVersion(runtime.installation?.version);
   if (!runtime.installation) {
@@ -117,17 +180,45 @@ export async function apply(filename, options = {}) {
     error.code = "BUDDYHUE_UNSUPPORTED_VERSION";
     throw error;
   }
-  const targetTheme = await loadTarget(filename);
+  const packageCompatible = artifact.compatibility
+    ? isVersionCompatible(runtime.installation.version, artifact.compatibility.workbuddy)
+    : null;
+  if (packageCompatible === false && !options.allowUntested) {
+    const error = new Error(`皮肤声明支持 ${artifact.compatibility.workbuddy}，当前 WorkBuddy 为 ${runtime.installation.version}；如已确认风险，请添加 --allow-untested。`);
+    error.code = "BUDDYHUE_THEME_INCOMPATIBLE";
+    throw error;
+  }
   const result = await applySkin({
     adapter: workbuddyAdapter,
-    targetTheme,
+    targetTheme: artifact.targetTheme,
     port: options.port,
     launch: true,
     appPath: options.appPath,
     restartExisting: options.restart,
     timeoutMs: options.timeoutMs
   });
-  return { ...result, ok: true, compatibility: { appVersion: runtime.installation.version, supported } };
+  let state = { recorded: true, error: null };
+  try {
+    await recordAppliedState({
+      artifact,
+      appVersion: runtime.installation.version,
+      port: result.port
+    });
+  } catch (error) {
+    state = { recorded: false, error: error.message };
+  }
+  return {
+    ...result,
+    targets: summarizeTargets(result.targets),
+    ok: true,
+    state,
+    artifact: artifactSummary(artifact),
+    compatibility: {
+      appVersion: runtime.installation.version,
+      adapterCompatible: supported,
+      packageCompatible
+    }
+  };
 }
 
 export async function verify(filename, options = {}) {
@@ -142,7 +233,29 @@ export async function verify(filename, options = {}) {
 }
 
 export async function restore(options = {}) {
-  return { ...(await restoreSkin({ adapter: workbuddyAdapter, port: options.port, timeoutMs: options.timeoutMs })), ok: true };
+  const result = await restoreSkin({ adapter: workbuddyAdapter, port: options.port, timeoutMs: options.timeoutMs });
+  let state = { cleared: true, error: null };
+  try {
+    await clearState();
+  } catch (error) {
+    state = { cleared: false, error: error.message };
+  }
+  return {
+    ...result,
+    renderer: {
+      ...result.renderer,
+      ...(result.renderer.targets ? {
+        targets: result.renderer.targets.map(({ targetId, title, url, result: restored }) => ({
+          targetId,
+          title: title ?? null,
+          url: sanitizeTargetUrl(url),
+          result: restored
+        }))
+      } : {})
+    },
+    state,
+    ok: true
+  };
 }
 
 export async function watch(filename, options = {}) {
@@ -177,27 +290,36 @@ export async function snapshot(output, options = {}) {
 }
 
 export async function packTheme(manifest, output, options = {}) {
-  const result = await writeThemePackage(path.resolve(manifest), path.resolve(output), { force: options.force });
-  return { command: "theme pack", ok: true, output: result.output, theme: result.bundle.theme, warnings: lintThemePackage(result.bundle) };
+  const result = await writeBuddyHuePackage(path.resolve(manifest), path.resolve(output), { force: options.force });
+  return {
+    command: "theme pack",
+    ok: true,
+    output: result.output,
+    format: BUDDYHUE_FORMAT,
+    theme: result.bundle.theme,
+    compatibility: result.bundle.compatibility,
+    integrity: result.bundle.integrity,
+    images: Object.keys(result.bundle.payload.images ?? {}),
+    warnings: result.warnings
+  };
 }
 
 export async function validateTheme(manifest) {
-  const { bundle } = await buildThemePackage(path.resolve(manifest));
-  return { command: "theme validate", ok: true, theme: bundle.theme, targets: Object.keys(bundle.targets), warnings: lintThemePackage(bundle) };
+  const { bundle, warnings } = await buildBuddyHuePackage(path.resolve(manifest));
+  return {
+    command: "theme validate",
+    ok: true,
+    format: BUDDYHUE_FORMAT,
+    theme: bundle.theme,
+    compatibility: bundle.compatibility,
+    images: Object.keys(bundle.payload.images ?? {}),
+    warnings
+  };
 }
 
 export async function inspectTheme(filename) {
-  const resolved = await assertThemePath(filename);
-  const bundle = await readThemePackage(resolved);
-  return {
-    command: "theme inspect",
-    ok: true,
-    file: resolved,
-    theme: bundle.theme,
-    targets: Object.keys(bundle.targets),
-    images: Object.keys(bundle.assets?.images ?? {}),
-    warnings: lintThemePackage(bundle)
-  };
+  const artifact = await loadArtifact(filename);
+  return { command: "theme inspect", ok: true, ...artifactSummary(artifact) };
 }
 
 function safeThemeId(value) {
@@ -221,22 +343,19 @@ export async function createThemeProject(directory, options = {}) {
   const id = safeThemeId(options.id ?? path.basename(output));
   const displayName = options.name ?? id.split("-").map((part) => part ? part[0].toUpperCase() + part.slice(1) : part).join(" ");
   const manifest = {
-    $schema: "https://codedrobe.app/schemas/theme-manifest.schema.json",
+    $schema: "../../schemas/buddyhue-manifest.schema.json",
     schemaVersion: 1,
     id,
-    displayName,
+    name: displayName,
     version: "0.1.0",
-    copy: { tagline: options.description ?? "A custom WorkBuddy theme made with BuddyHue." },
-    targets: {
-      workbuddy: {
-        css: "workbuddy.css",
-        verification: {
-          recommended: [{
-            name: "composer",
-            any: ["[role='textbox'][contenteditable='true']", ".wb-home-composer [contenteditable='true']"]
-          }]
-        }
-      }
+    description: options.description ?? "A custom WorkBuddy theme made with BuddyHue.",
+    compatibility: { workbuddy: ">=5.9.0 <5.10.0" },
+    css: "workbuddy.css",
+    verification: {
+      recommended: [{
+        name: "composer",
+        any: ["[role='textbox'][contenteditable='true']", ".wb-home-composer [contenteditable='true']"]
+      }]
     }
   };
   const css = `:root {
@@ -250,7 +369,14 @@ export async function createThemeProject(directory, options = {}) {
   background-image: linear-gradient(180deg, var(--buddyhue-accent-soft), transparent 40%);
 }
 `;
-  await writeFile(path.join(output, "theme.json"), `${JSON.stringify(manifest, null, 2)}\n`, { flag: options.force ? "w" : "wx" });
+  await writeFile(path.join(output, "buddyhue.json"), `${JSON.stringify(manifest, null, 2)}\n`, { flag: options.force ? "w" : "wx" });
   await writeFile(path.join(output, "workbuddy.css"), css, { flag: options.force ? "w" : "wx" });
-  return { command: "theme create", ok: true, output, manifest: path.join(output, "theme.json"), theme: { id, displayName, version: "0.1.0" } };
+  return {
+    command: "theme create",
+    ok: true,
+    output,
+    manifest: path.join(output, "buddyhue.json"),
+    packageExtension: BUDDYHUE_EXTENSION,
+    theme: { id, name: displayName, version: "0.1.0" }
+  };
 }

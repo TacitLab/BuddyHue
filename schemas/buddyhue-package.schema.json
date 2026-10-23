@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://buddyhue.dev/schemas/package-v1.json",
+  "title": "BuddyHue portable theme package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "schemaVersion", "createdAt", "theme", "compatibility", "payload", "integrity"],
+  "properties": {
+    "format": { "const": "buddyhue-theme" },
+    "schemaVersion": { "const": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "version"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$" },
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string" },
+        "description": { "type": "string" },
+        "author": { "type": "string" },
+        "license": { "type": "string" },
+        "tags": { "type": "array", "maxItems": 12, "items": { "type": "string" } }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workbuddy"],
+      "properties": { "workbuddy": { "type": "string" } }
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["css"],
+      "properties": {
+        "css": { "type": "string", "minLength": 1 },
+        "images": { "type": "object", "maxProperties": 32 },
+        "verification": { "type": "object" }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "digest"],
+      "properties": {
+        "algorithm": { "const": "sha256" },
+        "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    }
+  }
+}

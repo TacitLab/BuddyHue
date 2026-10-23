@@ -5,18 +5,18 @@ BuddyHue 的 Skill 应当是“薄编排层”，不在 SKILL.md 内复制注入
 ## 能力一：制作皮肤
 
 1. 收集品牌色、背景图、字体偏好、风格关键词和禁用项。
-2. 复制 `themes/starter` 到新的工作目录。
-3. 编辑 CSS 和 `theme.json`；素材仅使用 PNG/JPEG/WebP/GIF。
-4. 执行 `wbhue theme validate <theme.json> --json`。
+2. 运行 `wbhue theme create <目录>` 生成工程。
+3. 编辑 CSS 和 `buddyhue.json`；素材仅使用 PNG/JPEG/WebP/GIF。
+4. 执行 `wbhue theme validate <buddyhue.json> --json`。
 5. 若只有 lint 警告，解释风险并继续；格式错误必须修复。
-6. 执行 `wbhue theme pack <theme.json> --output <id>.codedrobe-theme --json`。
+6. 执行 `wbhue theme pack <buddyhue.json> --output <id>.buddyhue-theme --json`。
 7. 向用户展示皮肤名称、版本、素材数量、目标应用和警告数。
 
 ## 能力二：应用皮肤
 
 1. 执行 `wbhue doctor --json`。
 2. 若退出码为 `3`，说明版本尚未验证；只有用户明确同意后才添加 `--allow-untested`。
-3. 执行 `wbhue probe <package> --json`，只读检查当前界面。
+3. 执行 `wbhue preflight <package> --json`，完成包、版本和当前界面的只读检查。
 4. 执行 `wbhue apply <package> --json`。
 5. 若退出码为 `4`，向用户说明需要重启 WorkBuddy；只有明确同意后才重试并添加 `--restart`。
 6. 执行 `wbhue verify <package> --json`。

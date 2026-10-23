@@ -1,9 +1,11 @@
 import {
   apply,
+  BUDDYHUE_VERSION,
   createThemeProject,
   doctor,
   inspectTheme,
   packTheme,
+  preflight,
   probe,
   restore,
   snapshot,
@@ -19,14 +21,15 @@ const HELP = `BuddyHue — WorkBuddy 专属皮肤工具
   wbhue doctor [--json]
   wbhue status [--json]
   wbhue probe [皮肤包] [--json]
+  wbhue preflight <皮肤包> [--json]
   wbhue apply <皮肤包> [--restart] [--watch] [--allow-untested]
   wbhue verify [皮肤包] [--json]
   wbhue restore [--json]
   wbhue snapshot <输出.json> [--max-nodes 1500]
   wbhue theme create <目录> [--id <id>] [--name <名称>]
-  wbhue theme validate <theme.json>
-  wbhue theme pack <theme.json> --output <name.codedrobe-theme> [--force]
-  wbhue theme inspect <name.codedrobe-theme>
+  wbhue theme validate <buddyhue.json>
+  wbhue theme pack <buddyhue.json> --output <name.buddyhue-theme> [--force]
+  wbhue theme inspect <name.buddyhue-theme>
 
 通用选项：
   --json                 输出稳定 JSON，供 WorkBuddy Skill 或脚本调用
@@ -94,10 +97,19 @@ function human(result) {
       ? `当前皮肤：${result.theme.id} ${result.theme.version}`
       : `当前未检测到 BuddyHue 皮肤。${result.running && !result.cdp.ready ? " WorkBuddy 未通过 BuddyHue 启动，无法读取窗口状态。" : ""}`;
   }
-  if (result.command === "theme validate") return `✓ 皮肤有效：${result.theme.displayName} ${result.theme.version}\n目标：${result.targets.join(", ")}\n警告：${result.warnings.length}`;
+  if (result.command === "preflight") {
+    return [
+      `${result.ready ? "✓" : "!"} 预检：${result.ready ? "可以应用" : "暂不可应用"}`,
+      `皮肤：${result.artifact.theme.name} ${result.artifact.theme.version}`,
+      `包完整性：${result.artifact.integrity ? "已通过 SHA-256 校验" : "旧格式，无 BuddyHue 完整性字段"}`,
+      `WorkBuddy：${result.compatibility.appVersion ?? "未找到"}`,
+      `需要重启：${result.requiresRestart ? "是" : "否"}`
+    ].join("\n");
+  }
+  if (result.command === "theme validate") return `✓ 皮肤有效：${result.theme.name} ${result.theme.version}\n兼容范围：${result.compatibility.workbuddy}\n警告：${result.warnings.length}`;
   if (result.command === "theme create") return `✓ 已创建皮肤工程：${result.output}\n下一步：编辑 workbuddy.css，然后运行 wbhue theme validate ${result.manifest}`;
   if (result.command === "theme pack") return `✓ 已打包：${result.output}\n警告：${result.warnings.length}`;
-  if (result.command === "theme inspect") return `${result.theme.displayName} ${result.theme.version}\nID：${result.theme.id}\n目标：${result.targets.join(", ")}\n图片：${result.images.length}\n警告：${result.warnings.length}`;
+  if (result.command === "theme inspect") return `${result.theme.name} ${result.theme.version}\nID：${result.theme.id}\n格式：${result.format}\n兼容范围：${result.compatibility?.workbuddy ?? "旧格式未声明"}\n完整性：${result.integrity ? "通过" : "未提供"}\n图片：${result.images.length}\n警告：${result.warnings.length}`;
   if (result.command === "snapshot") return `✓ 已生成只读诊断快照：${result.output}（${result.targetCount} 个窗口）`;
   if (result.action === "apply") return `✓ 已应用皮肤：${result.theme.displayName} ${result.theme.version}\nWorkBuddy：${result.compatibility.appVersion}\n窗口：${result.targets.length}`;
   if (result.action === "restore") return result.renderer.restored ? "✓ 已恢复 WorkBuddy 默认外观。" : `! 主机设置已恢复，但窗口未连接：${result.renderer.message}`;
@@ -110,7 +122,31 @@ function exitCodeFor(error) {
   if (error.code === "BUDDYHUE_UNSUPPORTED_VERSION") return 3;
   if (error.code === "CODEDROBE_RESTART_REQUIRED") return 4;
   if (["CODEDROBE_VERIFY_FAILED", "CODEDROBE_DOM_INCOMPATIBLE", "CODEDROBE_TARGET_TIMEOUT"].includes(error.code)) return 5;
+  if (["BUDDYHUE_INVALID_PACKAGE", "BUDDYHUE_INTEGRITY_FAILED", "BUDDYHUE_OUTPUT_EXISTS"].includes(error.code)) return 6;
+  if (error.code === "BUDDYHUE_THEME_INCOMPATIBLE") return 7;
+  if (error.code === "BUDDYHUE_APP_NOT_FOUND") return 8;
   return 1;
+}
+
+function jsonEnvelope(result) {
+  return {
+    schemaVersion: 1,
+    tool: { name: "BuddyHue", version: BUDDYHUE_VERSION },
+    ...result
+  };
+}
+
+export function safeErrorMessage(message) {
+  return String(message).replace(/\b(?:file|https?):\/\/[^\s)]+/gi, (value) => {
+    try {
+      const parsed = new URL(value);
+      parsed.search = "";
+      parsed.hash = "";
+      return parsed.toString();
+    } catch {
+      return value.split(/[?#]/, 1)[0];
+    }
+  });
 }
 
 export async function run(argv, io = console) {
@@ -127,12 +163,13 @@ export async function run(argv, io = console) {
     if (command === "doctor") result = await doctor(flags);
     else if (command === "status") result = await status(flags);
     else if (command === "probe") result = await probe({ ...flags, theme: subcommand });
+    else if (command === "preflight") result = await preflight(requireValue(subcommand, "wbhue preflight <皮肤包>"), flags);
     else if (command === "apply") {
       const theme = requireValue(subcommand, "wbhue apply <皮肤包>");
       result = await apply(theme, flags);
       if (flags.watch) {
-        io.log(flags.json ? JSON.stringify(result) : human(result));
-        await watch(theme, { ...flags, onEvent: flags.json ? (event) => io.log(JSON.stringify({ command: "watch", event })) : undefined });
+        io.log(flags.json ? JSON.stringify(jsonEnvelope(result), null, 2) : human(result));
+        await watch(theme, { ...flags, onEvent: flags.json ? (event) => io.log(JSON.stringify(jsonEnvelope({ command: "watch", event }))) : undefined });
         return 0;
       }
     } else if (command === "verify") result = await verify(subcommand, flags);
@@ -142,10 +179,10 @@ export async function run(argv, io = console) {
       requireValue(positionals[2], "wbhue theme create <目录>"),
       flags
     );
-    else if (command === "theme" && subcommand === "validate") result = await validateTheme(requireValue(positionals[2], "wbhue theme validate <theme.json>"));
+    else if (command === "theme" && subcommand === "validate") result = await validateTheme(requireValue(positionals[2], "wbhue theme validate <buddyhue.json>"));
     else if (command === "theme" && subcommand === "pack") result = await packTheme(
-      requireValue(positionals[2], "wbhue theme pack <theme.json> --output <name.codedrobe-theme>"),
-      requireValue(flags.output, "wbhue theme pack <theme.json> --output <name.codedrobe-theme>"),
+      requireValue(positionals[2], "wbhue theme pack <buddyhue.json> --output <name.buddyhue-theme>"),
+      requireValue(flags.output, "wbhue theme pack <buddyhue.json> --output <name.buddyhue-theme>"),
       flags
     );
     else if (command === "theme" && subcommand === "inspect") result = await inspectTheme(requireValue(positionals[2], "wbhue theme inspect <皮肤包>"));
@@ -154,14 +191,15 @@ export async function run(argv, io = console) {
       error.code = "BUDDYHUE_USAGE";
       throw error;
     }
-    io.log(flags.json ? JSON.stringify(result, null, 2) : human(result));
+    io.log(flags.json ? JSON.stringify(jsonEnvelope(result), null, 2) : human(result));
     return result.ok === false ? 5 : 0;
   } catch (error) {
     const code = exitCodeFor(error);
+    const message = safeErrorMessage(error.message);
     if (parsed?.flags.json) {
-      io.error(JSON.stringify({ ok: false, error: { code: error.code ?? "BUDDYHUE_ERROR", message: error.message }, exitCode: code }, null, 2));
+      io.error(JSON.stringify(jsonEnvelope({ ok: false, error: { code: error.code ?? "BUDDYHUE_ERROR", message }, exitCode: code }), null, 2));
     } else {
-      io.error(`BuddyHue：${error.message}`);
+      io.error(`BuddyHue：${message}`);
       if (error.code === "CODEDROBE_RESTART_REQUIRED") io.error("请重新执行并添加 --restart；BuddyHue 仅在你明确允许时重启 WorkBuddy。");
     }
     return code;

@@ -1,10 +1,21 @@
 # BuddyHue
 
-BuddyHue 是面向 WorkBuddy 的皮肤 CLI。它把 CodeDrobe Core 的安全注入能力封装成更容易理解、可以被 WorkBuddy Skill 稳定调用的一组命令。
+BuddyHue 是 WorkBuddy 的底层皮肤工具。它定义、校验、应用和恢复 `.buddyhue-theme` 皮肤包，对上层 Skill、自动化脚本和未来的皮肤平台提供稳定 CLI 与 JSON 契约。
 
-当前 MVP 明确适配 WorkBuddy **5.9.x**，并已识别新版 macOS bundle ID `com.tencent.workbuddy.mac`。运行时不修改 `app.asar` 或应用签名；皮肤通过本机回环地址上的 Chromium DevTools Protocol 注入，应用失败会由 CodeDrobe Core 自动回滚。
+当前版本：**0.2.0**。首个明确支持范围是 WorkBuddy **5.9.x**；macOS 5.9.1 已完成安装识别和只读 DOM 兼容性验证。
 
-## 快速开始
+## 安全模型
+
+- 不修改 WorkBuddy 的 `app.asar`、应用签名或系统安全设置。
+- 皮肤包是声明式 JSON，只包含 CSS、图片、元数据和 DOM 验证规则，不能携带 JavaScript。
+- 禁止 `@import` 和外部 `url(...)`，不会从皮肤加载远程 CSS、字体或图片。
+- 每个 BuddyHue 包都带 SHA-256 摘要；文件被修改后会拒绝应用。
+- 包内声明 WorkBuddy 兼容范围，默认拒绝应用到范围外版本。
+- 应用前执行 DOM 预检，应用后执行验证；失败由 CodeDrobe Core 自动回滚。
+- WorkBuddy 已运行但没有调试通道时，必须显式添加 `--restart`，CLI 不会静默重启。
+- DOM 快照不包含聊天正文、表单值、可访问名称、查询参数或链接内容。
+
+## 安装
 
 要求 Node.js 20.12 或更高版本。
 
@@ -14,76 +25,92 @@ npm link
 wbhue doctor
 ```
 
-制作和检查皮肤：
+## 标准使用流程
+
+创建皮肤工程：
 
 ```bash
 wbhue theme create themes/ocean-brand --name "Ocean Brand"
-wbhue theme validate themes/starter/theme.json
-wbhue theme pack themes/starter/theme.json --output starter.codedrobe-theme
-wbhue theme inspect starter.codedrobe-theme
 ```
 
-应用、验证和恢复：
+生成的源文件是 `buddyhue.json` 和 `workbuddy.css`。完成样式与素材后：
 
 ```bash
-wbhue apply starter.codedrobe-theme
-wbhue verify starter.codedrobe-theme
+wbhue theme validate themes/ocean-brand/buddyhue.json
+wbhue theme pack themes/ocean-brand/buddyhue.json \
+  --output ocean-brand.buddyhue-theme
+wbhue theme inspect ocean-brand.buddyhue-theme
+```
+
+应用前建议先做完整只读预检：
+
+```bash
+wbhue preflight ocean-brand.buddyhue-theme
+wbhue apply ocean-brand.buddyhue-theme
+wbhue verify ocean-brand.buddyhue-theme
+```
+
+恢复默认外观：
+
+```bash
 wbhue restore
 ```
 
-如果 WorkBuddy 已在运行但不是由 BuddyHue 启动，第一次应用会返回“需要重启”，不会自行结束应用。明确允许后再执行：
+如果预检显示 WorkBuddy 需要重启，获得用户明确同意后执行：
 
 ```bash
-wbhue apply starter.codedrobe-theme --restart
+wbhue apply ocean-brand.buddyhue-theme --restart
 ```
 
-开发皮肤时可以保持自动重注入：
+## 命令
 
-```bash
-wbhue apply starter.codedrobe-theme --restart --watch
+- `wbhue doctor`：检查安装、版本、运行状态和皮肤通道。
+- `wbhue status`：读取活动皮肤和本地应用回执。
+- `wbhue preflight <包>`：校验包、应用版本和当前 DOM，全程只读。
+- `wbhue probe [包]`：只读探测当前 DOM landmark。
+- `wbhue snapshot <输出.json>`：生成隐私收敛的 DOM 快照。
+- `wbhue apply <包>`：应用并验证皮肤，失败自动回滚。
+- `wbhue verify [包]`：验证活动皮肤和布局状态。
+- `wbhue restore`：移除皮肤并清理应用回执。
+- `wbhue theme create|validate|pack|inspect`：管理 BuddyHue 皮肤工程和包。
+
+所有主要命令支持 `--json`。JSON 顶层固定包含：
+
+```json
+{
+  "schemaVersion": 1,
+  "tool": { "name": "BuddyHue", "version": "0.2.0" },
+  "command": "preflight",
+  "ok": true
+}
 ```
 
-## 给 WorkBuddy / Skill 调用
-
-所有主要命令都支持 `--json`，成功结果写到标准输出，错误结果写到标准错误，并提供稳定退出码：
+## 退出码
 
 | 退出码 | 含义 |
 | --- | --- |
 | `0` | 成功 |
-| `1` | 常规错误 |
-| `2` | 参数或命令错误 |
-| `3` | WorkBuddy 版本尚未验证 |
+| `1` | 常规运行错误 |
+| `2` | 命令或参数错误 |
+| `3` | BuddyHue 尚未验证当前 WorkBuddy 版本 |
 | `4` | 需要用户允许重启 WorkBuddy |
 | `5` | DOM 兼容性或应用后验证失败 |
+| `6` | 皮肤包格式、完整性或输出错误 |
+| `7` | 皮肤包声明的版本范围与 WorkBuddy 不兼容 |
+| `8` | 未找到 WorkBuddy |
 
-对企业小白用户，Skill 只需要把自然语言转换为以下安全流程：
+## BuddyHue v1 规范
 
-1. 永远先运行 `wbhue doctor --json`。
-2. 制作皮肤时先 `theme validate`，再 `theme pack`。
-3. 应用前向用户展示皮肤名称、版本和是否需要重启。
-4. 只有在用户明确同意后才添加 `--restart` 或 `--allow-untested`。
-5. 应用后运行 `verify`；失败时保留 BuddyHue/Core 的自动回滚结果。
+规范文档见 [`docs/theme-spec-v1.md`](docs/theme-spec-v1.md)，JSON Schema 位于：
 
-## 皮肤格式
+- [`schemas/buddyhue-manifest.schema.json`](schemas/buddyhue-manifest.schema.json)
+- [`schemas/buddyhue-package.schema.json`](schemas/buddyhue-package.schema.json)
 
-BuddyHue 直接使用声明式 `.codedrobe-theme` 包。源项目最少包含一个 `theme.json` 和一份 CSS；可选图片会被打包为 data URL。皮肤包不能携带 JavaScript，也不允许外部 CSS 资源。
+BuddyHue 仍可读取旧 `.codedrobe-theme` 包，便于迁移，但只有 `.buddyhue-theme` 提供 BuddyHue 完整性和兼容范围保证。
 
-可从 [`themes/starter`](themes/starter) 复制最小模板。为降低 WorkBuddy 升级后的失效概率，优先使用 CSS 变量、语义属性和稳定容器；不要依赖长层级、位置选择器或本地化文案。
+## 与 CodeDrobe 的关系
 
-## 命令
-
-- `wbhue doctor`：检查安装版本、运行状态和皮肤通道。
-- `wbhue status`：读取当前 BuddyHue 皮肤。
-- `wbhue probe [皮肤包]`：只读检查当前 DOM 是否兼容。
-- `wbhue snapshot <输出.json>`：生成不包含文本和表单值的只读 DOM 快照。
-- `wbhue apply <皮肤包>`：应用皮肤并验证，失败自动回滚。
-- `wbhue verify [皮肤包]`：确认皮肤仍在且布局未出现横向溢出。
-- `wbhue restore`：移除 BuddyHue 注入，恢复默认外观。
-- `wbhue theme create|validate|pack|inspect`：创建、制作和检查皮肤包。
-
-## 与直接使用 CodeDrobe 的区别
-
-CodeDrobe Core 是通用运行时；BuddyHue 是 WorkBuddy 产品层。BuddyHue 维护 WorkBuddy 版本兼容范围、新旧安装标识、中文诊断、企业可消费的 JSON 契约、明确的重启授权和面向 Skill 的低风险工作流。底层运行时仍作为依赖复用，避免分叉安全关键代码。
+BuddyHue 拥有面向 WorkBuddy 的包规范、兼容策略、诊断、状态和 CLI 契约；CodeDrobe Core 作为内部运行时依赖，负责 CDP 连接、CSS 注入、应用后验证和回滚。BuddyHue 不复制或分叉它的安全关键代码。
 
 ## 开发
 
