@@ -39,6 +39,7 @@ test("installs an available update from the official GitHub repository", async (
   const calls = [];
   const result = await upgradeBuddyHue("0.4.0", {
     env: {},
+    cache: "/tmp/buddyhue-test-cache",
     fetchImpl: async () => ({ ok: true, json: async () => ({ version: "0.5.0" }) }),
     execFileImpl: async (command, args) => {
       calls.push([command, args]);
@@ -47,13 +48,20 @@ test("installs an available update from the official GitHub repository", async (
   });
   assert.equal(result.method, "github");
   assert.equal(result.updated, true);
-  assert.deepEqual(calls, [["npm", ["install", "--global", OFFICIAL_GIT_SPEC]]]);
+  assert.deepEqual(calls, [["npm", [
+    "install",
+    "--global",
+    OFFICIAL_GIT_SPEC,
+    "--cache",
+    "/tmp/buddyhue-test-cache"
+  ]]]);
 });
 
 test("does not install when GitHub has no newer version", async () => {
   let executed = false;
   const result = await upgradeBuddyHue("0.4.0", {
     env: {},
+    cache: "/tmp/buddyhue-test-cache",
     fetchImpl: async () => ({ ok: true, json: async () => ({ version: "0.4.0" }) }),
     execFileImpl: async () => { executed = true; }
   });
@@ -66,6 +74,7 @@ test("falls back to a direct GitHub install when the version check fails", async
   const calls = [];
   const result = await upgradeBuddyHue("0.4.0", {
     env: {},
+    cache: "/tmp/buddyhue-test-cache",
     fetchImpl: async () => { throw new Error("offline check"); },
     execFileImpl: async (command, args) => {
       calls.push([command, args]);
@@ -73,5 +82,11 @@ test("falls back to a direct GitHub install when the version check fails", async
     }
   });
   assert.equal(result.updated, null);
-  assert.deepEqual(calls, [["npm", ["install", "--global", OFFICIAL_GIT_SPEC]]]);
+  assert.deepEqual(calls, [["npm", [
+    "install",
+    "--global",
+    OFFICIAL_GIT_SPEC,
+    "--cache",
+    "/tmp/buddyhue-test-cache"
+  ]]]);
 });

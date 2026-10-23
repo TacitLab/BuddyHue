@@ -1,5 +1,8 @@
 import { execFile as execFileCallback } from "node:child_process";
+import { mkdir } from "node:fs/promises";
+import path from "node:path";
 import { promisify } from "node:util";
+import { buddyHueHome } from "./paths.mjs";
 
 const execFile = promisify(execFileCallback);
 
@@ -105,7 +108,15 @@ export async function upgradeBuddyHue(currentVersion, options = {}) {
     };
   }
 
-  await run(execImpl, "npm", ["install", "--global", options.gitSpec ?? OFFICIAL_GIT_SPEC]);
+  const cache = options.cache ?? path.join(buddyHueHome(), "npm-cache");
+  await mkdir(cache, { recursive: true });
+  await run(execImpl, "npm", [
+    "install",
+    "--global",
+    options.gitSpec ?? OFFICIAL_GIT_SPEC,
+    "--cache",
+    cache
+  ]);
   return {
     command: "upgrade",
     ok: true,
