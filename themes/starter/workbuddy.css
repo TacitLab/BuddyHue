@@ -1,0 +1,15 @@
+:root {
+  --buddyhue-accent: #6c5ce7;
+  --buddyhue-accent-soft: color-mix(in srgb, var(--buddyhue-accent), transparent 86%);
+}
+
+/* Starter theme: intentionally conservative and easy to remove. */
+[class*="sidebar"],
+[data-testid*="sidebar"] {
+  background-image: linear-gradient(180deg, var(--buddyhue-accent-soft), transparent 40%);
+}
+
+textarea:focus,
+[contenteditable="true"]:focus {
+  outline-color: var(--buddyhue-accent) !important;
+}

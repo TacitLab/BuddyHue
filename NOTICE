@@ -1,0 +1,8 @@
+BuddyHue
+Copyright 2026 Tacit Lab
+
+BuddyHue uses @codedrobe/core, licensed under the Apache License 2.0.
+CodeDrobe: https://github.com/CodeDrobe/CodeDrobe
+
+No source code from CodeDrobe is copied into this repository. The runtime is
+consumed as a package dependency and remains subject to its own license terms.
